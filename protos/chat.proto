@@ -1,0 +1,13 @@
+service Messager {
+  rpc Chat (ChatMessage) returns (ReceivedMessage) {}
+}
+
+message ChatMessage {
+  string name = 1;
+  string message = 2;
+  bool is_encrypted = 3;
+}
+
+message ReceivedMessage {
+  string name = 1;
+}
