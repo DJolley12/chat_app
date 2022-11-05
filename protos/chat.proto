@@ -1,11 +1,15 @@
+syntax = "proto3";
+option go_package = "./";
+
 service Messager {
   rpc Chat (ChatMessage) returns (ReceivedMessage) {}
 }
 
 message ChatMessage {
-  string name = 1;
-  string message = 2;
-  bool is_encrypted = 3;
+  string from_name = 1;
+  string to_name = 2;
+  string message_body = 3;
+  bool is_encrypted = 4;
 }
 
 message ReceivedMessage {
