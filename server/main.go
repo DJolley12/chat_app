@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"flag"
 	"fmt"
 	"log"
@@ -14,28 +13,26 @@ import (
 )
 
 var (
-	port = flag.Int("port", 50051, "The server port")
+	addr = flag.String("ip-address", "127.0.0.1", "ip address to serve on-defaults to localhost")
+	port = flag.Int("port", 50051, "the server port-defaults to 50051")
 )
-
-type server struct {
-	pb.ChatServer
-}
-
-func (s *server) SendMessage(ctx context.Context, in *pb.ChatMessage) (*pb.ReceivedMessage, error) {
-	log.Printf("received message from %v", in.GetFromName())
-	return &pb.ReceivedMessage{Name: in.GetFromName()}, nil
-}
-
 func main() {
+	connections := make(map[string]*connection)
+	server := &server{
+		connections: connections,
+	}
+
 	flag.Parse()
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", *port))
+	lis, err := net.Listen("tcp", fmt.Sprintf("%v:%d", addr, *port))
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
 	s := grpc.NewServer()
-	pb.RegisterChatServer(s, &server{})
+	pb.RegisterChatServer(s, server)
+
 	log.Printf("server listening at %v", lis.Addr())
+
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}

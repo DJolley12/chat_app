@@ -23,19 +23,18 @@ func main() {
 		log.Fatalf("did not connect: %v", err)
 	}
 	defer conn.Close()
-	c := pb.NewChatClient(conn)
+	client := pb.NewChatClient(conn)
 
 	// Contact the server and print out its response.
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	r, err := c.SendMessage(ctx, &pb.ChatMessage{
+	r, err := client.SendMessage(ctx, &pb.ChatMessage{
 		FromName:    "Me",
-		ToName:      "Me",
+		ToNames:     []string{"Me"},
 		MessageBody: "a message that is cool",
 		IsEncrypted: false,
 	})
-	if err != nil {
-		log.Fatalf("could not greet: %v", err)
-	}
+
+
 	log.Printf("Greeting: %s", r.GetName())
 }

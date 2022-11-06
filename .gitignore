@@ -1,0 +1,6 @@
+
+protos/chat.pb.go
+protos/chat_grpc.pb.go
+client/client
+server/server
+installers/client
