@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"sync"
 
@@ -27,31 +28,33 @@ func (s *server) CreateMessageStream(in *pb.Connect, stream pb.Chat_CreateMessag
 		error:  make(chan error),
 	}
 	s.connections[in.GetUser().GetId()] = conn
+	fmt.Printf("incoming connection from: %#v\n", in.GetUser())
+	println("connection recv")
 	return <-conn.error
 }
 
 func (s *server) SendMessage(ctx context.Context, in *pb.ChatMessage) (*pb.ReceivedMessage, error) {
-	log.Printf("received message from %v, to %v", in.GetFromName(), in.GetToNames())
+	log.Printf("received message from %#v, to %#v", in.GetFromUser().GetId(), in.GetToUsers())
 	wg := sync.WaitGroup{}
 	done := make(chan int)
 
-	for _, id := range in.GetToNames() {
+	for _, u := range in.GetToUsers() {
 		wg.Add(1)
 
-		go func(msg *pb.ChatMessage, id string) {
+		go func(msg *pb.ChatMessage, u *pb.User) {
 			defer wg.Done()
-			conn := s.connections[id]
+			conn := s.connections[u.GetId()]
 			if conn.active {
 				err := conn.stream.Send(msg)
-				glog.Info("sending message to id: %v, stream: %v", id, conn.stream)
+				glog.Info("sending message to user: %#v, stream: %v", u, conn.stream)
 
 				if err != nil {
-					glog.Errorf("err sending %v - %v", id, err)
+					glog.Errorf("err sending %v - %v", u.GetId(), err)
 					conn.active = false
 					conn.error <- err
 				}
 			}
-		}(in, id)
+		}(in, u)
 
 	}
 
@@ -61,6 +64,8 @@ func (s *server) SendMessage(ctx context.Context, in *pb.ChatMessage) (*pb.Recei
 	}()
 
 	<-done
-	return &pb.ReceivedMessage{Name: in.GetFromName()}, nil
+	return &pb.ReceivedMessage{
+		User: in.GetFromUser(),
+	}, nil
 }
 
